@@ -42,3 +42,16 @@ Every generated value is browser-simulated. The dashboard labels itself as simul
 ## Later physical integration
 
 The firmware folders remain optional hardware-integration templates. They are not needed for this virtual lab. When hardware is eventually available, validate the exact board pinout, sensor electrical levels, driver circuits and safe behavior before flashing or connecting anything. The virtual lab should remain available as the software-only demo mode.
+
+## Screenshot-ready analytics and chart export
+
+Open **Analytics** to see four pre-filled visualizations without waiting for events:
+
+1. Sensor signal trend across 60 virtual samples.
+2. Hourly event volume grouped into 2-hour windows.
+3. Sensor activity distribution across motion, entry and window channels.
+4. Illustrative system-health trend across a 24-hour window.
+
+The page also includes an event-composition summary. The fixed baseline is marked as illustrative simulated demo data; it is not physical sensor telemetry.
+
+Use **Export charts PNG** to download a single 2×2 report image named `sentinel-analytics-demo-report.png`. It includes all four graphs, a timestamp, and a clear simulated-data note. The image is suitable for project documentation and presentation slides.
