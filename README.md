@@ -1,46 +1,90 @@
-# ESP32-CAM Smart Intrusion Detection
+# Sentinel Lab — ESP32-CAM Intrusion Detection Digital Twin
 
-A starter implementation for an ESP32 + ESP32-CAM IoT intrusion-monitoring project.
+**Run the complete software demonstration without physical hardware.** The default experience is a browser-based virtual IoT lab. No ESP32, ESP32-CAM, sensors, relays, webcam, Wi-Fi credentials, API key, or Cloudflare account is needed to open and use the simulator locally.
+
+## Start here: hardware-free simulator
+
+The dashboard is a self-contained static application with a simulated ESP32 controller, three virtual sensors, three response indicators, an ESP32-CAM scene emulator, event history, analytics, scenario replays, and local exports.
+
+**Local quick start**
+
+```bash
+cd dashboard
+python -m http.server 8080
+```
+
+Open `http://localhost:8080`.
+
+Or open the GitHub repository and enable GitHub Pages from the `dashboard` folder using a Pages-compatible build workflow. For Cloudflare hosting, see [Cloudflare deployment](#cloudflare-deployment).
+
+### Included virtual experiences
+
+- **Overview:** system health, simulated sensor channels, virtual actuator indicators, camera scene and live activity stream.
+- **Virtual Hardware Lab:** toggle all three inputs and three outputs; rename the channels; inspect the virtual ESP32 controller.
+- **Camera Lab:** animated generated scene, simulated motion overlay, camera link fault injection and frame metadata capture. It does not access a webcam or create real photographs.
+- **Scenario library:** normal operation, perimeter intrusion, night activity, sensor fault and camera-offline replays.
+- **Analytics:** live session timeline and event composition.
+- **Event History:** filter system, sensor and alert records; export CSV.
+- **Configuration:** rename device/zone, choose simulation speed, enable/disable generated telemetry and camera overlays, export JSON, reset local state.
+- **Offline support:** service worker caches the static app after the first online visit.
+
+All generated values are explicitly marked as **simulated**. Events, preferences and frame metadata stay in the browser's localStorage; they do not automatically sync between browsers or to Cloudflare. Export data when you need to preserve a demonstration.
 
 ## Architecture
 
-- **ESP32 controller**: reads up to three configurable digital sensors and controls up to three configurable outputs.
-- **ESP32-CAM**: serves a camera stream/capture endpoint on the local network. Image upload to the cloud is handled separately by an authenticated client or future firmware integration.
-- **Cloudflare Worker**: authenticated event and telemetry API.
-- **Dashboard**: static responsive dashboard served by the Worker.
-- **Cloudflare D1 (optional)**: stores telemetry and intrusion events. The API has an in-memory fallback for local development only; production persistence requires D1 binding.
+```text
+Browser Virtual Lab (no hardware)
+  ├── ESP32 controller emulator
+  │     ├── 3 virtual sensor inputs
+  │     └── 3 virtual response indicators
+  ├── ESP32-CAM scene emulator (generated canvas artwork)
+  ├── Scenario engine + event timeline
+  ├── Analytics + CSV/JSON export
+  └── Local browser storage + offline cache
+
+Optional cloud layer
+  └── Cloudflare Worker API + optional D1 event persistence
+
+Optional future physical layer
+  ├── ESP32 controller firmware template
+  └── ESP32-CAM firmware template
+```
 
 ## Repository layout
 
-- `firmware/esp32_controller/` — Arduino sketch template for the main ESP32.
-- `firmware/esp32_cam/` — ESP32-CAM camera web-server template (local LAN only).
-- `worker/` — Cloudflare Worker API and dashboard.
-- `worker/schema.sql` — D1 schema.
-- `docs/SETUP.md` — hardware, firmware, and Cloudflare setup.
-- `wrangler.toml` — Worker configuration.
+- `dashboard/` — hardware-free web application and offline assets.
+- `docs/VIRTUAL_LAB.md` — detailed simulator guide and demo script.
+- `docs/SETUP.md` — optional Cloudflare and future hardware setup.
+- `firmware/esp32_controller/` — optional Arduino starter for the main ESP32.
+- `firmware/esp32_cam/` — optional camera-board connectivity starter.
+- `worker/` — Cloudflare Worker API, Wrangler config and D1 schema.
+- `.github/workflows/ci.yml` — syntax checks for the Worker and browser app.
 
-## Important safety and privacy notes
+## Cloudflare deployment
 
-This is a monitoring and alerting prototype, not a certified security system. The default firmware example uses placeholder GPIO assignments and generic digital inputs; verify your exact board, sensor output voltage, active level, and relay/driver requirements before connecting hardware. Do not connect motors, sirens, locks, or other high-current loads directly to GPIO pins. Use properly rated drivers, isolation, fusing, and a safe manual override. Do not configure this prototype to injure, trap, or physically confront anyone.
+The browser simulator can be hosted by the Worker without D1 and without a device token. From the repository root:
 
-Camera streams should remain on a trusted local network. Do not expose the ESP32-CAM web server directly to the public internet. Use the Cloudflare API for event metadata and upload images only through an authenticated, size-limited endpoint after configuring object storage and access controls. Obtain appropriate consent and follow applicable privacy rules before recording people.
+```bash
+cd worker
+npm install
+npx wrangler login
+npx wrangler deploy
+```
 
-## Quick start
+Wrangler serves the static files from `dashboard/` and exposes `GET /api/health`. To persist authenticated physical-device telemetry later, create a D1 database, apply `schema.sql`, configure the D1 binding in `wrangler.toml`, and add a `DEVICE_TOKEN` Worker secret. None of those optional steps is required for the virtual simulator.
 
-1. Follow [docs/SETUP.md](docs/SETUP.md).
-2. Run the Worker locally with Wrangler.
-3. Configure the dashboard device ID and API token.
-4. Flash firmware only after confirming the actual board and pinout.
-5. Create the D1 database and apply `worker/schema.sql` before deploying production telemetry.
+## Optional hardware integration
 
-## API
+The firmware folders are future integration templates, not requirements for the software demo. The hardware pin assignments and sensor types have not been finalized. Verify the exact board, pinout, voltage levels, drivers and safe fail-states before connecting or flashing real equipment. Never drive a load directly from a GPIO pin.
 
-- `GET /api/health` — service health.
-- `GET /api/status?device_id=...` — latest status and recent events.
-- `POST /api/telemetry` — authenticated telemetry/event ingestion.
+## Safety, privacy and data integrity
 
-All timestamps are generated/normalized server-side where possible. Never commit real API tokens, Wi-Fi credentials, Cloudflare account IDs, or private keys.
+This is an educational prototype, not a certified alarm or access-control product. No real alarm, lock, siren, camera, notification or actuator is controlled by the simulator. The virtual camera is generated illustration, not a live feed or AI recognition. Use consent and appropriate retention controls before any future real-world recording. Do not expose a physical ESP32-CAM stream directly to the public internet.
 
-## Deployment status
+## API (optional device path)
 
-The source and Worker configuration are provided here. A real Cloudflare deployment still requires your Cloudflare account, Worker deployment authorization, and (for durable history) D1 database binding. A successful GitHub commit does not mean the Worker is deployed.
+- `GET /api/health` — Worker health and D1 availability.
+- `GET /api/status?device_id=...` — recent persisted device events.
+- `POST /api/telemetry` — authenticated telemetry ingestion, requiring a `DEVICE_TOKEN` secret.
+
+A deployed dashboard is not evidence that physical hardware is connected. The app continuously labels its own data source.
