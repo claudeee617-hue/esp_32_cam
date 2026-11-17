@@ -11,7 +11,13 @@ python -m http.server 8080
 
 Open `http://localhost:8080`. Use the scenario library to demonstrate normal operation, a perimeter intrusion sequence, night activity, a sensor fault and camera-offline recovery. See [VIRTUAL_LAB.md](VIRTUAL_LAB.md).
 
-## 2. Deploy the browser simulator to Cloudflare
+## 2. Hosted dashboard
+
+The current hosted demo is available at:
+
+**[Open Sentinel Virtual IoT Lab](https://esp32-cam-iot.sentinel-iot-lab.workers.dev)**
+
+## 3. Deploy the browser simulator to Cloudflare
 
 The Worker serves the static dashboard from `../dashboard`. D1 and secrets are optional for hosting the simulator.
 
@@ -24,7 +30,7 @@ npx wrangler deploy
 
 After deployment, open the `workers.dev` URL shown by Wrangler. The dashboard should load at the root; `/api/health` reports Worker status.
 
-## 3. Optional durable event storage
+## 4. Optional durable event storage
 
 Only needed when integrating an authenticated device or a future server-side event producer.
 
@@ -42,7 +48,7 @@ npx wrangler deploy
 
 Keep `DEVICE_TOKEN` secret. Do not paste it into the frontend, firmware committed to GitHub, README, issue, or browser storage. The current browser simulator uses localStorage and does not send its data to the Worker.
 
-## 4. Optional future physical integration
+## 5. Optional future physical integration
 
 The default project demonstration does not require any physical board. If you later add hardware:
 
@@ -54,6 +60,6 @@ The default project demonstration does not require any physical board. If you la
 
 The example firmware uses placeholder pins and is not ready to flash without board-specific validation. Do not drive a relay coil or any high-current load directly from a GPIO. Keep camera endpoints on a trusted local network; do not port-forward them to the public internet.
 
-## 5. Privacy and operations
+## 6. Privacy and operations
 
-The camera lab is generated canvas artwork and does not request webcam access, capture real people, or upload images. The browser simulator stores events, configuration and capture metadata locally in the current browser. Export CSV/JSON to preserve a demonstration. Clear browser storage or use the in-app reset to remove the local session.
+The camera lab is generated canvas artwork and does not request webcam access, capture real people, or upload images. The browser simulator stores events, configuration and capture metadata locally in the current browser. Export CSV/JSON to preserve a demo session. Clear browser storage or use the in-app reset to remove the local session.
