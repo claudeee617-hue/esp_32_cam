@@ -4,9 +4,9 @@
 
 ## Hosted demo
 
-**Cloudflare Worker deployment:** [Open Sentinel Virtual IoT Lab](https://esp32-cam-iot.ronakanantkijaan.workers.dev)
+**Cloudflare Worker deployment:** [Open Sentinel Virtual IoT Lab](https://esp32-cam-iot.sentinel-iot-lab.workers.dev)
 
-The Worker deployment is published on the account's workers.dev subdomain. The browser simulator is hardware-free and labels generated sensor data and camera scenes as simulated. Its current session data is stored locally in your browser.
+The Worker deployment is published on the project's clean workers.dev address. The browser simulator is hardware-free and labels generated sensor data and camera scenes as simulated. Its current session data is stored locally in your browser.
 
 ## Start here: hardware-free simulator
 
