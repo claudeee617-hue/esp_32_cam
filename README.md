@@ -29,7 +29,7 @@ Or open the GitHub repository and enable GitHub Pages from the `dashboard` folde
 - **Virtual Hardware Lab:** toggle all three inputs and three outputs; rename the channels; inspect the virtual ESP32 controller.
 - **Camera Lab:** animated generated scene, simulated motion overlay, camera link fault injection and frame metadata capture. It does not access a webcam or create real photographs.
 - **Scenario library:** normal operation, perimeter intrusion, night activity, sensor fault and camera-offline replays.
-- **Analytics:** live session timeline and event composition.
+- **Analytics:** four screenshot-ready graphs (sensor signal timeline, hourly event-volume bars, sensor distribution doughnut, and virtual system-health trend), plus event composition and a one-click PNG report export. The baseline is explicitly marked as simulated demo data.
 - **Event History:** filter system, sensor and alert records; export CSV.
 - **Configuration:** rename device/zone, choose simulation speed, enable/disable generated telemetry and camera overlays, export JSON, reset local state.
 - **Offline support:** service worker caches the static app after the first online visit.
