@@ -2,6 +2,12 @@
 
 **Run the complete software demonstration without physical hardware.** The default experience is a browser-based virtual IoT lab. No ESP32, ESP32-CAM, sensors, relays, webcam, Wi-Fi credentials, API key, or Cloudflare account is needed to open and use the simulator locally.
 
+## Hosted demo
+
+**Cloudflare Worker deployment:** [Open Sentinel Virtual IoT Lab](https://esp32-cam-iot.ronakanantkijaan.workers.dev)
+
+The Worker deployment is published on the account's workers.dev subdomain. The browser simulator is hardware-free and labels generated sensor data and camera scenes as simulated. Its current session data is stored locally in your browser.
+
 ## Start here: hardware-free simulator
 
 The dashboard is a self-contained static application with a simulated ESP32 controller, three virtual sensors, three response indicators, an ESP32-CAM scene emulator, event history, analytics, scenario replays, and local exports.
