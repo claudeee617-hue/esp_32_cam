@@ -79,7 +79,7 @@ function metrics(){
  $("health-value").innerHTML=h+'<span class="unit">%</span>';$("health-caption").textContent=h===100?"All virtual services nominal":h>=70?"One or more services degraded":"Multiple services degraded";
  $("sensor-value").innerHTML=online()+'<span class="unit">/ 3</span>';$("sensor-caption").textContent=online()===3?"All channels connected":(3-online())+" channel unavailable";
  $("event-value").textContent=state.events.length;$("event-caption").textContent=state.events.some(e=>e.severity==="alert")?"Includes virtual alert events":"No critical demo alert";
- $("analytics-events").textContent=state.events.length;$("analytics-alerts").textContent=state.events.filter(e=>["alert","warning"].includes(e.severity)).length;$("analytics-captures").textContent=state.shots.length;$("analytics-health").textContent=h+"%";
+ $("analytics-events").textContent=128;$("analytics-alerts").textContent=14;$("analytics-captures").textContent=87;$("analytics-health").textContent="98.4%";
  $("engine-state").textContent=state.running?"RUNNING":"PAUSED";$("pause-btn").textContent=state.running?"Ⅱ":"▶";$("pause-btn").title=state.running?"Pause simulation":"Resume simulation";
 }
 function cameraState(){
@@ -118,13 +118,118 @@ function drawScene(c,t){
  if(state.overlays){x.strokeStyle="#57d8cf";x.globalAlpha=.22;for(let q=0;q<w;q+=w/18){x.beginPath();x.moveTo(q,0);x.lineTo(q,h);x.stroke();}x.globalAlpha=1;x.fillStyle="#a6d8c8";x.font=Math.max(9,w*.012)+"px monospace";x.fillText("SIM CAM 01 | "+time(),15,h-15);x.fillText("GENERATED SCENE",w*.72,h-15);}
 }
 function drawCameras(){const t=Date.now();drawScene($("camera-canvas"),t);drawScene($("camera-canvas-large"),t);$("camera-time").textContent=time();$("camera-time-large").textContent=time();}
+const DEMO_HOURLY = [2,3,4,5,7,8,11,14,16,18,20,20];
+const DEMO_SENSOR_TOTALS = [42,27,18];
+const DEMO_HEALTH = [100,100,99,98,98,97,98,96,97,99,100,99];
+const DEMO_EVENT_CATEGORIES = [
+ ["Motion / zone events",42],["Entry contact events",27],["Window zone events",18],
+ ["System heartbeats",27],["Fault / alert events",14]
+];
+function ensureDemoSamples(){
+ if(state.samples.length<60){
+  const demo=Array.from({length:60},(_,i)=>[
+   (i%17===5||i%19===11||i%29===18)?1:0,
+   (i%23===8||i%31===22)?1:0,
+   (i%27===13||i%37===24)?1:0
+  ]);
+  state.samples=[...demo,...state.samples].slice(-60);
+ }
+}
+function chartBase(id,title){
+ const c=$(id);if(!c)return null;
+ const x=c.getContext("2d");if(!x)return null;
+ const w=c.width,h=c.height;
+ x.clearRect(0,0,w,h);x.fillStyle="#0b1523";x.fillRect(0,0,w,h);
+ x.fillStyle="#91a5bd";x.font="600 18px system-ui";x.fillText(title,28,31);
+ return {c,x,w,h};
+}
 function drawChart(){
- const c=$("activity-chart");if(!c)return;const x=c.getContext("2d"),w=c.width,h=c.height,p=34;x.clearRect(0,0,w,h);x.fillStyle="#0b1523";x.fillRect(0,0,w,h);x.strokeStyle="#203149";
- for(let i=0;i<5;i++){const y=p+i*(h-p*1.6)/4;x.beginPath();x.moveTo(p,y);x.lineTo(w-10,y);x.stroke();}
- const d=state.samples.slice(-60),colors=["#5cdbec","#f3bd63","#a99bff"];
- d.forEach((a,j)=>a.forEach((v,k)=>{const xx=p+(w-p-18)*(j/Math.max(1,d.length-1)),yy=h-p-(v?(h-p*1.6)*.85:0);x.fillStyle=colors[k];x.beginPath();x.arc(xx,yy,3.5,0,Math.PI*2);x.fill();if(j){const prev=d[j-1][k],px=p+(w-p-18)*((j-1)/Math.max(1,d.length-1)),py=h-p-(prev?(h-p*1.6)*.85:0);x.strokeStyle=colors[k];x.beginPath();x.moveTo(px,py);x.lineTo(xx,yy);x.stroke();}}));
- const ct=[state.events.filter(e=>e.type.includes("MOTION")).length,state.events.filter(e=>e.type.includes("ENTRY")).length,state.events.filter(e=>e.type.includes("WINDOW")).length],names=["Motion / zone events","Entry contact events","Window zone events","Other system events"];
- $("event-breakdown").innerHTML=names.map((n,i)=>{const v=i===3?Math.max(0,state.events.length-ct.reduce((a,b)=>a+b,0)):ct[i],pct=state.events.length?Math.round(v/state.events.length*100):0;return '<div class="breakdown-row"><span>'+n+'</span><b>'+v+' · '+pct+'%</b><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>';}).join("");
+ drawActivityChart();drawHourlyChart();drawSensorChart();drawHealthChart();drawEventBreakdown();
+}
+function drawActivityChart(){
+ const o=chartBase("activity-chart","Sensor signal state · 60 virtual samples");if(!o)return;
+ const {x,w,h}=o,p={l:65,r:24,t:58,b:45},pw=w-p.l-p.r,ph=h-p.t-p.b;
+ x.strokeStyle="#203149";x.fillStyle="#8496ad";x.font="13px ui-monospace,monospace";
+ for(let i=0;i<3;i++){const y=p.t+i*ph/2;x.beginPath();x.moveTo(p.l,y);x.lineTo(w-p.r,y);x.stroke();x.fillText(i===0?"HIGH":i===1?"MID":"LOW",8,y+4);}
+ [0,15,30,45,60].forEach(v=>{const xx=p.l+pw*v/60;x.fillStyle="#8496ad";x.fillText(String(v),xx-7,h-13);});
+ const colors=["#5cdbec","#f3bd63","#a99bff"],names=["Motion","Entry","Window"],data=state.samples.slice(-60);
+ names.forEach((name,k)=>{
+  x.beginPath();x.strokeStyle=colors[k];x.lineWidth=3;
+  data.forEach((sample,i)=>{const xx=p.l+pw*i/Math.max(1,data.length-1),yy=p.t+ph*(sample[k]?0.12:0.9);if(i===0)x.moveTo(xx,yy);else x.lineTo(xx,yy);});
+  x.stroke();
+  data.forEach((sample,i)=>{if(!sample[k])return;const xx=p.l+pw*i/Math.max(1,data.length-1),yy=p.t+ph*.12;x.fillStyle=colors[k];x.beginPath();x.arc(xx,yy,4,0,Math.PI*2);x.fill();});
+ });
+}
+function drawHourlyChart(){
+ const o=chartBase("hourly-chart","Illustrative events grouped into 2-hour windows");if(!o)return;
+ const {x,w,h}=o,p={l:52,r:22,t:58,b:52},pw=w-p.l-p.r,ph=h-p.t-p.b,max=24;
+ x.strokeStyle="#203149";x.fillStyle="#8496ad";x.font="13px ui-monospace,monospace";
+ [0,6,12,18,24].forEach(v=>{const y=p.t+ph-ph*v/max;x.beginPath();x.moveTo(p.l,y);x.lineTo(w-p.r,y);x.stroke();x.fillText(String(v),13,y+4);});
+ DEMO_HOURLY.forEach((v,i)=>{
+  const slot=pw/DEMO_HOURLY.length,bw=slot*.55,bx=p.l+i*slot+(slot-bw)/2,by=p.t+ph-ph*v/max,bh=p.t+ph-by;
+  const grad=x.createLinearGradient(0,by,0,by+bh);grad.addColorStop(0,"#68e0e7");grad.addColorStop(1,"#327aa2");
+  x.fillStyle=grad;x.beginPath();x.roundRect(bx,by,bw,bh,5);x.fill();
+  x.fillStyle="#bfd0e2";x.font="12px ui-monospace,monospace";x.fillText(String(v),bx+bw/2-4,by-8);
+  x.fillStyle="#8496ad";x.fillText(String(i*2).padStart(2,"0"),bx+bw/2-8,h-19);
+ });
+}
+function drawSensorChart(){
+ const o=chartBase("sensor-chart","Share of illustrative sensor-trigger samples");if(!o)return;
+ const {x,w,h}=o,cx=w*.5,cy=h*.55,r=104,ri=65,total=DEMO_SENSOR_TOTALS.reduce((a,b)=>a+b,0);
+ const colors=["#5cdbec","#f3bd63","#a99bff"],labels=["MOTION","ENTRY","WINDOW"];
+ let angle=-Math.PI/2;
+ DEMO_SENSOR_TOTALS.forEach((value,i)=>{
+  const next=angle+Math.PI*2*value/total;
+  x.beginPath();x.arc(cx,cy,r,angle,next);x.arc(cx,cy,ri,next,angle,true);x.closePath();x.fillStyle=colors[i];x.fill();angle=next;
+ });
+ x.textAlign="center";x.fillStyle="#edf4ff";x.font="700 34px system-ui";x.fillText(String(total),cx,cy+5);
+ x.fillStyle="#8193aa";x.font="12px ui-monospace,monospace";x.fillText("SAMPLES",cx,cy+27);x.textAlign="left";
+ labels.forEach((label,i)=>{
+  const y=105+i*62;x.fillStyle=colors[i];x.beginPath();x.arc(w*.79,y-4,7,0,Math.PI*2);x.fill();
+  x.fillStyle="#a8b8ca";x.font="13px ui-monospace,monospace";x.fillText(label,w*.79+17,y);
+  x.fillStyle="#edf4ff";x.font="700 18px system-ui";x.fillText(String(DEMO_SENSOR_TOTALS[i])+" · "+Math.round(DEMO_SENSOR_TOTALS[i]/total*100)+"%",w*.79+17,y+22);
+ });
+}
+function drawHealthChart(){
+ const o=chartBase("health-chart","Illustrative virtual controller health index");if(!o)return;
+ const {x,w,h}=o,p={l:55,r:24,t:60,b:48},pw=w-p.l-p.r,ph=h-p.t-p.b,min=90,max=100;
+ x.strokeStyle="#203149";x.fillStyle="#8496ad";x.font="13px ui-monospace,monospace";
+ [90,92,94,96,98,100].forEach(v=>{const y=p.t+ph-(v-min)/(max-min)*ph;x.beginPath();x.moveTo(p.l,y);x.lineTo(w-p.r,y);x.stroke();x.fillText(v+"%",7,y+4);});
+ const pts=DEMO_HEALTH.map((v,i)=>({x:p.l+pw*i/(DEMO_HEALTH.length-1),y:p.t+ph-(v-min)/(max-min)*ph}));
+ const fill=x.createLinearGradient(0,p.t,0,p.t+ph);fill.addColorStop(0,"#54dfa244");fill.addColorStop(1,"#54dfa200");
+ x.beginPath();x.moveTo(pts[0].x,p.t+ph);pts.forEach(q=>x.lineTo(q.x,q.y));x.lineTo(pts[pts.length-1].x,p.t+ph);x.closePath();x.fillStyle=fill;x.fill();
+ x.beginPath();pts.forEach((q,i)=>i?x.lineTo(q.x,q.y):x.moveTo(q.x,q.y));x.strokeStyle="#54dfa2";x.lineWidth=4;x.stroke();
+ pts.forEach((q,i)=>{x.beginPath();x.arc(q.x,q.y,5,0,Math.PI*2);x.fillStyle="#54dfa2";x.fill();x.fillStyle="#9bb0c6";x.font="11px ui-monospace,monospace";x.fillText(DEMO_HEALTH[i]+"%",q.x-15,q.y-12);});
+ ["00","04","08","12","16","20","24"].forEach((v,i)=>{const xx=p.l+pw*i/6;x.fillStyle="#8496ad";x.fillText(v+":00",xx-15,h-17);});
+}
+function drawEventBreakdown(){
+ const names=DEMO_EVENT_CATEGORIES,total=names.reduce((a,b)=>a+b[1],0);
+ $("event-breakdown").innerHTML=names.map(([name,value])=>{
+  const pct=Math.round(value/total*100);
+  return '<div class="breakdown-row"><span>'+name+'</span><b>'+value+' · '+pct+'%</b><div class="bar-track"><div class="bar-fill" style="width:'+pct+'%"></div></div></div>';
+ }).join("");
+}
+function exportChartBoard(){
+ drawChart();
+ const items=[
+  ["activity-chart","Sensor activity trend"],["hourly-chart","Hourly event volume"],
+  ["sensor-chart","Sensor activity distribution"],["health-chart","System health trend"]
+ ];
+ const board=document.createElement("canvas");board.width=2100;board.height=1430;
+ const x=board.getContext("2d");if(!x){toast("Chart export is not available in this browser.");return;}
+ x.fillStyle="#080d17";x.fillRect(0,0,board.width,board.height);
+ x.fillStyle="#5cdbec";x.font="700 22px ui-monospace,monospace";x.fillText("SENTINEL LAB  /  ANALYTICS REPORT",55,58);
+ x.fillStyle="#edf4ff";x.font="700 40px system-ui";x.fillText("Virtual IoT Security · Data Snapshot",55,112);
+ x.fillStyle="#94a7bd";x.font="18px system-ui";x.fillText("SIMULATED DEMO DATA · Illustrative only · "+new Date().toLocaleString(),55,148);
+ items.forEach(([id,label],i)=>{
+  const col=i%2,row=Math.floor(i/2),bx=55+col*1010,by=185+row*600;
+  x.fillStyle="#101a2a";x.strokeStyle="#263a52";x.lineWidth=2;x.beginPath();x.roundRect(bx,by,960,555,16);x.fill();x.stroke();
+  x.fillStyle="#dce9f8";x.font="600 22px system-ui";x.fillText(label,bx+25,by+42);
+  x.drawImage($(id),bx+15,by+60,930,360);
+ });
+ x.fillStyle="#7488a0";x.font="15px system-ui";x.fillText("All graphs are browser-generated synthetic values. No physical ESP32, ESP32-CAM or sensor readings are represented.",55,1400);
+ const link=document.createElement("a");link.download="sentinel-analytics-demo-report.png";link.href=board.toDataURL("image/png");document.body.appendChild(link);link.click();link.remove();
+ toast("Analytics chart board exported as PNG.");
 }
 function capture(){
  if(!state.camera){toast("Camera is offline in this scenario.");return;}
@@ -144,6 +249,7 @@ function tick(){
  if(state.auto&&state.heartbeat>=10){state.heartbeat=0;state.samples.push(state.sensors.map(s=>s.online&&s.active?1:0));state.samples=state.samples.slice(-60);log("VIRTUAL_HEARTBEAT","Virtual device heartbeat",state.device+" · "+online()+"/3 channels online · browser generated","system");if(view==="analytics")drawChart();}else save();
 }
 function init(){
+ ensureDemoSamples();
  document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.view)));
  document.querySelectorAll("[data-nav]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.nav)));
  $("pause-btn").addEventListener("click",()=>{state.running=!state.running;if(!state.running)pausedElapsed=Date.now()-state.started;else if(pausedElapsed)state.started=Date.now()-pausedElapsed;log(state.running?"SIMULATION_RESUMED":"SIMULATION_PAUSED",state.running?"Simulation resumed":"Simulation paused","Browser simulation clock state changed.","system");render();});
@@ -155,6 +261,7 @@ function init(){
  $("event-filter").addEventListener("change",events);$("export-csv").addEventListener("click",csv);$("export-json").addEventListener("click",jsonExport);
  $("clear-events").addEventListener("click",()=>{state.events=[];render();toast("Event history cleared.");});
  $("save-settings").addEventListener("click",settingsSave);
+ $("export-chart-board").addEventListener("click",exportChartBoard);
  $("reset-all").addEventListener("click",()=>{if(!confirm("Reset virtual sensors, events, snapshots and preferences?"))return;scenarioRun++;state=fresh();localStorage.removeItem(KEY);settingsInit();log("SIMULATOR_RESET","Virtual lab reset to defaults","New browser simulation session started.","system");render();toast("All simulation data reset.");});
  $("ribbon-help").addEventListener("click",()=>toast("This digital twin generates sensor states, camera artwork, events and charts locally. It never connects to physical hardware."));
  settingsInit();
