@@ -5,18 +5,16 @@ on:
   pull_request:
     branches: [main]
 jobs:
-  worker-check:
+  syntax-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: worker/package-lock.json
-      - name: Install dependencies
+      - name: Install Worker tooling
         working-directory: worker
         run: npm install
-      - name: Syntax check
+      - name: Check Worker and dashboard JavaScript
         working-directory: worker
         run: npm run check
