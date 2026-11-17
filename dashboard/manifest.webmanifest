@@ -1,0 +1,13 @@
+{
+  "name": "Sentinel Virtual IoT Security Lab",
+  "short_name": "Sentinel Lab",
+  "description": "Hardware-free ESP32 and ESP32-CAM intrusion detection digital twin.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080d17",
+  "theme_color": "#080d17",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
